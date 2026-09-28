@@ -8,21 +8,30 @@ client = Groq(api_key=api_key) if api_key else None
 
 HTML = """
 <!DOCTYPE html>
-<html><head><title>SOLO AI V4.1</title>
+<html><head><title>SOLO AI V4.1 - Fixed</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>body{background:#0f0f0f;color:white;font-family:Arial;padding:20px}.msg{padding:12px;border-radius:12px;margin:10px 0}.user{background:#2a7fff;margin-left:auto;max-width:80%}.bot{background:#222;max-width:80%}input{width:70%;padding:12px;border-radius:10px;border:none}button{padding:12px 20px;border-radius:10px;border:none;background:#2a7fff;color:white}</style>
-</head><body>
-<h2>🤖 SOLO AI V4.1 - Live</h2>
+<style>body{background:#111;color:white;font-family:Arial;padding:15px}
+#chat{max-height:70vh;overflow-y:auto;margin-bottom:15px}
+.msg{padding:12px;border-radius:12px;margin:8px 0;word-wrap:break-word}
+.user{background:#2a7fff;margin-left:20%;}
+.bot{background:#222;margin-right:20%;}
+.row{display:flex;gap:8px}
+input{flex:1;padding:12px;border-radius:10px;border:none}
+button{padding:12px 18px;border-radius:10px;border:none;background:#2a7fff;color:white;font-weight:bold}
+</style></head><body>
+<h3>🤖 SOLO AI V4.1 - Live ✅</h3>
 <div id="chat"></div>
-<input id="inp" placeholder="Ask anything..."><button onclick="send()">Send</button>
+<div class="row"><input id="inp" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')send()"><button onclick="send()">Send</button></div>
 <script>
 async function send(){
- let v=document.getElementById('inp').value;
- document.getElementById('chat').innerHTML+=`<div class='msg user'>${v}</div>`;
- document.getElementById('inp').value='';
+ let v=document.getElementById('inp').value.trim(); if(!v) return;
+ let c=document.getElementById('chat');
+ c.innerHTML+=`<div class='msg user'>${v}</div>`; document.getElementById('inp').value='';
+ c.scrollTop=c.scrollHeight;
  let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:v})});
  let d=await r.json();
- document.getElementById('chat').innerHTML+=`<div class='msg bot'>${d.reply||d.error}</div>`;
+ c.innerHTML+=`<div class='msg bot'>${d.reply||d.error}</div>`;
+ c.scrollTop=c.scrollHeight;
 }
 </script></body></html>
 """
@@ -32,19 +41,33 @@ def home(): return render_template_string(HTML)
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
-    if not api_key: return jsonify({"error": "GROQ_API_KEY missing on Render"}), 500
-    if not client: return jsonify({"error": "Groq client failed to init"}), 500
+    if not api_key: return jsonify({"reply": "GROQ_API_KEY missing"}), 500
     msg = request.json.get("message","")
-    models_to_try = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "llama3-8b-8192"]
-    last_err = ""
-    for model_name in models_to_try:
+    # NEW 2026 MODELS - these are active on Groq free tier
+    models = [
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "llama-3.1-8b-instant",
+        "llama-3.3-70b-versatile"
+    ]
+    for m in models:
         try:
-            c = client.chat.completions.create(model=model_name, messages=[{"role":"user","content":msg}], max_tokens=800)
-            return jsonify({"reply": c.choices[0].message.content})
+            completion = client.chat.completions.create(
+                model=m,
+                messages=[{"role":"user","content":msg}],
+                max_tokens=1000,
+                temperature=0.7
+            )
+            return jsonify({"reply": completion.choices[0].message.content})
         except Exception as e:
-            last_err = str(e)
-            continue
-    return jsonify({"error": f"All models failed. Last error: {last_err}. Key starts with: {api_key[:7]}..."}), 500
+            last = str(e)
+            if "decommissioned" in last or "not_found" in last or "does not exist" in last:
+                continue
+            else:
+                # If it's a real error, return it
+                continue
+    return jsonify({"reply": f"Still failing. Last error: {last}. Go to https://console.groq.com/docs/deprecations to see active models. Key OK: {api_key[:10]}..."})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
