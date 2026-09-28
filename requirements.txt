@@ -1,0 +1,7 @@
+flask
+groq
+gunicorn
+pillow
+requests
+PyPDF2
+sympy
