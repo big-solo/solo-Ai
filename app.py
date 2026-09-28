@@ -156,7 +156,7 @@ Keep answers concise but powerful."""
 
     try:
         comp = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="llama-3.1-8b-8192",
             messages=[{"role":"system","content":system},{"role":"user","content":msg}],
             temperature=0.3
         )
