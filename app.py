@@ -4,7 +4,7 @@ from openai import OpenAI
 
 app = Flask(__name__)
 
-SYSTEM_PROMPT = "You are SOLO AI V5 Beautiful Edition built by Samuel Solomon from Lagos, Nigeria. You are NOT OpenAI."
+SYSTEM_PROMPT = "You are SOLO AI V5 Beautiful Edition built by Samuel Solomon from Lagos, Nigeria. You are NOT OpenAI, you are SOLO AI."
 
 HTML = """<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -51,7 +51,7 @@ function toggle(){document.getElementById('menu').classList.toggle('show')}
 function hide(){document.getElementById('menu').classList.remove('show')}
 function mic(){if(!rec){alert('Use Chrome');return} listening?rec.stop():rec.start()}
 function filePicked(inp){let f=inp.files[0];if(!f)return;let c=document.getElementById('c');if(f.type.startsWith('image')){let r=new FileReader();r.onload=e=>{c.innerHTML+=`<div class='m u' style='padding:4px'><img src='${e.target.result}' style='max-width:220px;border-radius:12px'></div>`;c.scrollTop=9999};r.readAsDataURL(f)}else{c.innerHTML+=`<div class='m u'>📄 ${f.name}</div>`}attach=`[Uploaded: ${f.name}]`}
-async function send(){let inp=document.getElementById('i');let t=inp.value.trim();if(!t&&!attach)return;let c=document.getElementById('c');if(t)c.innerHTML+=`<div class='m u'>${t}</div>`;let full=attach?attach+"\\n"+t:t;inp.value='';attach='';hide();c.innerHTML+=`<div id='tmp' class='m b'>...</div>`;try{let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:full})});let d=await r.json();document.getElementById('tmp')?.remove();c.innerHTML+=`<div class='m b'>${d.reply}</div>`}catch(e){document.getElementById('tmp').innerText='Error: Check GROQ key in Render'}c.scrollTop=99999}
+async function send(){let inp=document.getElementById('i');let t=inp.value.trim();if(!t&&!attach)return;let c=document.getElementById('c');if(t)c.innerHTML+=`<div class='m u'>${t}</div>`;let full=attach?attach+"\\n"+t:t;inp.value='';attach='';hide();c.innerHTML+=`<div id='tmp' class='m b'>...</div>`;try{let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:full})});let d=await r.json();document.getElementById('tmp')?.remove();c.innerHTML+=`<div class='m b'>${d.reply}</div>`}catch(e){document.getElementById('tmp').innerText='Error: Check GROQ key'}c.scrollTop=99999}
 document.addEventListener('click',e=>{if(!e.target.closest('.bar-wrap'))hide()})
 </script></body></html>
 """
@@ -70,7 +70,7 @@ def chat_api():
             return jsonify({"reply": "ERROR: GROQ_API_KEY not set in Render"})
         client = OpenAI(api_key=key, base_url="https://api.groq.com/openai/v1")
         resp = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="llama3-8b-8192",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": msg}
