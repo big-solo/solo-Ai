@@ -186,7 +186,16 @@ async function send(){
 }
 
 function clearChat(){ if(confirm('Clear all?')){history=[];localStorage.removeItem('solo_v7');render()} }
-function speakLast(){ if(!lastReply) {let h=[...history].reverse().find(x=>x.role==='assistant'); if(!h) return; lastReply=h.content} let u=new SpeechSynthesisUtterance(lastReply.slice(0,800)); u.lang='en-US'; speechSynthesis.speak(u); }
+let isSpeaking = false;
+function speakLast(){ 
+  if(isSpeaking){ speechSynthesis.cancel(); isSpeaking=false; document.querySelector('.top button:nth-child(2)').innerText='🔊'; return; }
+  if(!lastReply){ let h=[...history].reverse().find(x=>x.role==='assistant'); if(!h) return; lastReply=h.content }
+  let u=new SpeechSynthesisUtterance(lastReply.replace(/[*#`]/g,'').slice(0,1000)); 
+  u.lang='en-US'; u.rate=0.95;
+  u.onstart=()=>{ isSpeaking=true; document.querySelector('.top button:nth-child(2)').innerText='⏹️'; };
+  u.onend=()=>{ isSpeaking=false; document.querySelector('.top button:nth-child(2)').innerText='🔊'; };
+  speechSynthesis.speak(u); 
+}
 </script>
 </body>
 </html>
